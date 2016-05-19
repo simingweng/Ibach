@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Ibach</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="launch_usb_settings_description">Launch the factory USB mode settings app to change the current USB functions when attached to a USB host</string>
+    <string name="launch_usb_settings">Launch USB Settings</string>
+    <string name="launch_service_mode_description">Launch the Samsung factory Service Mode app and go to its Main Menu</string>
+    <string name="launch_service_mode">Launch Service Mode</string>
+    <string name="my_email">siming.weng@gmail.com</string>
+    <string name="offiziersmesser">Offiziersmesser</string>
+</resources>
