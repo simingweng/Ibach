@@ -35,8 +35,33 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final String TAG = MainActivity.class.getName();
-    private static final int REQUEST_READ_PHONE_STATE = 0;
+    private static final int REQUEST_READ_PHONE_STATE_FOR_QUERY = 0;
+    private static final int REQUEST_READ_PHONE_STATE_FOR_CONFIGURE = 1;
     private CheckBox volteCheckBox;
+
+    private static void setEnhanced4gLteModeSetting(Context context, boolean enabled) {
+        try {
+            Class imsManagerClass = Class.forName("com.android.ims.ImsManager");
+            Method method = imsManagerClass.getMethod("setEnhanced4gLteModeSetting", Context.class, Boolean.TYPE);
+            method.invoke(null, context, enabled);
+            Log.i(TAG, "Enhanced 4G LTE mode is set to " + enabled);
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
+        }
+    }
+
+    private static boolean isEnhanced4gLteModeSettingEnabledByUser(Context context) {
+        try {
+            Class imsManagerClass = Class.forName("com.android.ims.ImsManager");
+            Method method = imsManagerClass.getMethod("isEnhanced4gLteModeSettingEnabledByUser", Context.class);
+            return (boolean) method.invoke(null, context);
+        } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            e.printStackTrace();
+            Log.e(TAG, e.getMessage());
+        }
+        return false;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,26 +89,23 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         volteCheckBox = (CheckBox) findViewById(R.id.volteCheckBox);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_DENIED) {
+                    requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, REQUEST_READ_PHONE_STATE_FOR_QUERY);
+                } else {
+                    volteCheckBox.setChecked(isEnhanced4gLteModeSettingEnabledByUser(MainActivity.this));
+                }
+            }
+        });
         volteCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                Log.i(TAG, "set VoLTE to " + isChecked);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_DENIED) {
-                    requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, REQUEST_READ_PHONE_STATE);
+                    requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, REQUEST_READ_PHONE_STATE_FOR_CONFIGURE);
                 } else {
-                    try {
-                        Class imsManagerClass = Class.forName("com.android.ims.ImsManager");
-                        Method method = imsManagerClass.getMethod("setEnhanced4gLteModeSetting", new Class[]{Context.class, Boolean.TYPE});
-                        method.invoke(null, getApplicationContext(), isChecked);
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (NoSuchMethodException e) {
-                        e.printStackTrace();
-                    } catch (InvocationTargetException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
+                    setEnhanced4gLteModeSetting(MainActivity.this, isChecked);
                 }
             }
         });
@@ -93,22 +115,16 @@ public class MainActivity extends AppCompatActivity
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
-            case REQUEST_READ_PHONE_STATE:
+            case REQUEST_READ_PHONE_STATE_FOR_QUERY:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Log.i(TAG, "permission has been granted to read phone state");
-                    try {
-                        Class imsManagerClass = Class.forName("com.android.ims.ImsManager");
-                        Method method = imsManagerClass.getMethod("setEnhanced4gLteModeSetting", new Class[]{Context.class, Boolean.TYPE});
-                        method.invoke(null, getApplicationContext(), volteCheckBox.isChecked());
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (NoSuchMethodException e) {
-                        e.printStackTrace();
-                    } catch (InvocationTargetException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
+                    setEnhanced4gLteModeSetting(MainActivity.this, volteCheckBox.isChecked());
+                }
+                break;
+            case REQUEST_READ_PHONE_STATE_FOR_CONFIGURE:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.i(TAG, "permission has been granted to read phone state");
+                    volteCheckBox.setChecked(isEnhanced4gLteModeSettingEnabledByUser(this));
                 }
                 break;
         }
