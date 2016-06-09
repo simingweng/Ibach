@@ -10,12 +10,14 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/offiziersmesser" />
+            <option value="$PROJECT_DIR$/sim" />
           </set>
         </option>
         <option name="myModules">
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/offiziersmesser" />
+            <option value="$PROJECT_DIR$/sim" />
           </set>
         </option>
       </GradleProjectSettings>

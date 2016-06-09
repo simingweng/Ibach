@@ -13,38 +13,48 @@
     tools:showIn="@layout/app_bar_main">
 
     <TextView
+        android:id="@+id/usbSettingsTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="@string/launch_usb_settings_description"
-        android:id="@+id/usbSettingsTextView"
         android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:text="@string/launch_usb_settings_description"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
 
     <Button
+        android:id="@+id/usbSettingsButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/launch_usb_settings"
-        android:id="@+id/usbSettingsButton"
         android:layout_below="@+id/usbSettingsTextView"
         android:layout_centerHorizontal="true"
-        android:onClick="onLaunchUSBSettingsButtonClicked" />
+        android:onClick="onLaunchUSBSettingsButtonClicked"
+        android:text="@string/launch_usb_settings" />
 
     <TextView
+        android:id="@+id/serviceModeTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="@string/launch_service_mode_description"
-        android:id="@+id/serviceModeTextView"
         android:layout_below="@+id/usbSettingsButton"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        android:text="@string/launch_service_mode_description"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
 
     <Button
+        android:id="@+id/serviceModeButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/launch_service_mode"
-        android:id="@+id/serviceModeButton"
         android:layout_below="@+id/serviceModeTextView"
         android:layout_centerHorizontal="true"
-        android:onClick="onLaunchServiceModeButtonClicked" />
+        android:onClick="onLaunchServiceModeButtonClicked"
+        android:text="@string/launch_service_mode" />
+
+    <CheckBox
+        android:id="@+id/volteCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/serviceModeButton"
+        android:layout_marginTop="35dp"
+        android:text="Voice over LTE" />
+
 </RelativeLayout>

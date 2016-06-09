@@ -4,6 +4,8 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Ibach.iml" filepath="$PROJECT_DIR$/Ibach.iml" />
       <module fileurl="file://$PROJECT_DIR$/offiziersmesser/app.iml" filepath="$PROJECT_DIR$/offiziersmesser/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/offiziersmesser/offiziersmesser.iml" filepath="$PROJECT_DIR$/offiziersmesser/offiziersmesser.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sim/sim.iml" filepath="$PROJECT_DIR$/sim/sim.iml" />
     </modules>
   </component>
 </project>

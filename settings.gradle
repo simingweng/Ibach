@@ -1,1 +1,1 @@
-include ':offiziersmesser'
+include ':offiziersmesser', ':sim'
