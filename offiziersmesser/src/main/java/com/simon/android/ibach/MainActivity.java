@@ -3,8 +3,12 @@ package com.simon.android.ibach;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -20,12 +24,16 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.ToggleButton;
 
 import com.stericson.RootShell.exceptions.RootDeniedException;
 import com.stericson.RootShell.execution.Command;
 import com.stericson.RootShell.execution.Shell;
 import com.stericson.RootTools.RootTools;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -37,7 +45,10 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = MainActivity.class.getName();
     private static final int REQUEST_READ_PHONE_STATE_FOR_QUERY = 0;
     private static final int REQUEST_READ_PHONE_STATE_FOR_CONFIGURE = 1;
+    private static final int REQUEST_RECORD_AUDIO = 2;
     private CheckBox volteCheckBox;
+    private ToggleButton recordingToggle;
+    private Thread recordingThread;
 
     private static void setEnhanced4gLteModeSetting(Context context, boolean enabled) {
         try {
@@ -46,8 +57,7 @@ public class MainActivity extends AppCompatActivity
             method.invoke(null, context, enabled);
             Log.i(TAG, "Enhanced 4G LTE mode is set to " + enabled);
         } catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-            Log.e(TAG, e.getMessage());
+            Log.e(TAG, e.toString());
         }
     }
 
@@ -89,6 +99,8 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         volteCheckBox = (CheckBox) findViewById(R.id.volteCheckBox);
+        recordingToggle = (ToggleButton) findViewById(R.id.recordingToggleButton);
+
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -99,6 +111,7 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
+
         volteCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -109,6 +122,80 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
+
+        recordingToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_DENIED) {
+                    requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_RECORD_AUDIO);
+                } else {
+                    handleRecording(isChecked);
+                }
+            }
+        });
+
+        try {
+            Class ciiClass = Class.forName("com.samsung.commonimsinterface.imsinterface.CommonIMSInterface");
+            Method getInstance = ciiClass.getMethod("getInstance", Integer.TYPE, Context.class);
+            Object iiForGeneral = getInstance.invoke(null, 7, this);
+
+            Class iiForGeneralClass = Class.forName("com.samsung.commonimsinterface.imsinterface.IMSInterfaceForGeneral");
+            Method manualDeregister = iiForGeneralClass.getMethod("manualDeregister");
+            manualDeregister.invoke(iiForGeneral);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void handleRecording(boolean isChecked) {
+        if (isChecked) {
+            recordingThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        int minBufferSize = AudioRecord.getMinBufferSize(48000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
+                        AudioRecord record = new AudioRecord.Builder()
+                                .setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION)
+                                .setAudioFormat(new AudioFormat.Builder()
+                                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                                        .setSampleRate(48000)
+                                        .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                                        .build())
+                                .setBufferSizeInBytes(minBufferSize)
+                                .build();
+                        FileOutputStream fos = new FileOutputStream(new File(Environment.getExternalStorageDirectory(), "pcm.raw"));
+                        BufferedOutputStream bos = new BufferedOutputStream(fos);
+                        byte[] audioData = new byte[minBufferSize];
+                        record.startRecording();
+                        int numOfBytesRead;
+                        while (!Thread.currentThread().isInterrupted()) {
+                            numOfBytesRead = record.read(audioData, 0, minBufferSize);
+                            if (numOfBytesRead > 0) {
+                                bos.write(audioData, 0, numOfBytesRead);
+                            }
+                        }
+                        record.stop();
+                        Log.i(TAG, "stop recording");
+                        record.release();
+                        bos.close();
+                    } catch (IOException e) {
+                        Log.e(TAG, e.toString());
+                    }
+
+                }
+            });
+            recordingThread.start();
+        } else {
+            if (recordingThread != null) {
+                recordingThread.interrupt();
+            }
+        }
     }
 
     @Override
@@ -118,13 +205,19 @@ public class MainActivity extends AppCompatActivity
             case REQUEST_READ_PHONE_STATE_FOR_QUERY:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Log.i(TAG, "permission has been granted to read phone state");
-                    setEnhanced4gLteModeSetting(MainActivity.this, volteCheckBox.isChecked());
+                    volteCheckBox.setChecked(isEnhanced4gLteModeSettingEnabledByUser(this));
                 }
                 break;
             case REQUEST_READ_PHONE_STATE_FOR_CONFIGURE:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Log.i(TAG, "permission has been granted to read phone state");
-                    volteCheckBox.setChecked(isEnhanced4gLteModeSettingEnabledByUser(this));
+                    setEnhanced4gLteModeSetting(MainActivity.this, volteCheckBox.isChecked());
+                }
+                break;
+            case REQUEST_RECORD_AUDIO:
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED && grantResults[1] == PackageManager.PERMISSION_GRANTED) {
+                    Log.i(TAG, "permission has been granted to record audio");
+                    handleRecording(recordingToggle.isChecked());
                 }
                 break;
         }

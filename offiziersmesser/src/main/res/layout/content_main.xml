@@ -57,4 +57,14 @@
         android:layout_marginTop="35dp"
         android:text="Voice over LTE" />
 
+    <ToggleButton
+        android:id="@+id/recordingToggleButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/volteCheckBox"
+        android:layout_centerHorizontal="true"
+        android:text="ToggleButton"
+        android:textOff="In Call Record"
+        android:textOn="Stop" />
+
 </RelativeLayout>
